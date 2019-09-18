@@ -14,12 +14,34 @@
 
     var name = "life"
     var hooks = {}
+    var hookDef
 
-    var hookLifes = []
+    var hookLifes = {}
     var hookEmitData = {}
 
-    function _hookExec(key, that, data) {
-        var lifes = that.$options[name] || []
+    var lifeIndexNum = 100
+    function addHookLifes(that, vueLifeName) {
+        var id = that._life_id_
+        if (!id) {
+            id = that._life_id_ = "$" + lifeIndexNum++
+        }
+        var life = hookLifes[id]
+        if (!life) {
+            life = hookLifes[id] = {
+                that: that,
+                ready: {}
+            }
+        }
+        life.ready[vueLifeName] = true
+        return life
+    }
+
+    function _hookExec(key, life, data) {
+        var lifes = life.that.$options[name] || []
+        var hook = hooks[key] || hookDef
+        if (!life.ready[hook]) {
+            return
+        }
         // console.log("lifes", lifes)
         var lifeFn
         for (var i = 0; i < lifes.length; i += 1) {
@@ -27,12 +49,12 @@
             // console.log(lifes[i])
             lifeFn = lifes[i][key]
             if (lifeFn) {
-                lifeFn.call(that, data.data)
+                lifeFn.call(life.that, data.data)
             }
         }
     }
     function hookExec(key, that) {
-        let data = hookEmitData[key]
+        var data = hookEmitData[key]
         // console.log("1", key, hookEmitData, that, data)
         if (!data) {
             return
@@ -42,9 +64,10 @@
             _hookExec(key, that, data)
             return
         }
+        // var hook = hooks[key] || hookDef
         // console.log("3", key, hookEmitData, that)
-        for (var i = 0; i < hookLifes.length; i += 1) {
-            _hookExec(key, hookLifes[i], data)
+        for (var n in hookLifes) {
+            _hookExec(key, hookLifes[n], data)
         }
     }
 
@@ -64,7 +87,7 @@
         }
         var initFn = init.init
         // 设定在什么钩子函数中出发
-        var hookDef = init.hookDef || "mounted"
+        hookDef = init.hookDef || "mounted"
         if (init.hooks) {
             hooks = init.hooks
         }
@@ -80,23 +103,13 @@
         }
 
         function hookExecByVM(that, lifeName) {
+            // console.log("---", that, lifeName)
             setTimeout(function() {
-                var keyOpt = {}
-                for (var n in hooks) {
-                    if (hooks[n] == lifeName) {
-                        keyOpt[n] = true
-                    }
-                }
-                var isDefHook = lifeName == hookDef
+                var life = addHookLifes(that, lifeName)
                 var lifes = that.$options[name] || []
-                var life, k, data
-                for (var i = 0; i < lifes.length; i += 1) {
-                    life = lifes[i]
-                    for (k in life) {
-                        data = hookEmitData[k]
-                        if (data && (keyOpt[k] || isDefHook)) {
-                            life[k].call(that, data.data)
-                        }
+                for (var i = 0, k; i < lifes.length; i += 1) {
+                    for (k in lifes[i]) {
+                        _hookExec(k, life, hookEmitData[k])
                     }
                 }
             }, 0)
@@ -121,18 +134,18 @@
         }
 
         //
-        var beforeCreateFn = mixinOpt.beforeCreate
-        mixinOpt.beforeCreate = function() {
-            var life = this.$options[name]
-            // console.log(">>>...", this.$options[name], name)
-            if (life) {
-                hookLifes.push(this)
-            }
+        // var beforeCreateFn = mixinOpt.beforeCreate
+        // mixinOpt.beforeCreate = function() {
+        //     var life = this.$options[name]
+        //     console.log(">>>...", this.$options[name], name)
+        //     if (life) {
+        //         hookLifes.push(this)
+        //     }
 
-            if (beforeCreateFn) {
-                beforeCreateFn.call(this)
-            }
-        }
+        //     if (beforeCreateFn) {
+        //         beforeCreateFn.call(this)
+        //     }
+        // }
 
         // 销毁
         var destroyedFn = mixinOpt.destroyed
@@ -143,10 +156,9 @@
 
             var life = this.$options[name]
             if (life) {
-                for (var i = 0; i < hookLifes.length; i += 1) {
-                    if (this == hookLifes[i]) {
-                        hookLifes.splice(i, 1)
-                        break
+                for (var n in hookLifes) {
+                    if (this == hookLifes[n].that) {
+                        delete hookLifes[n]
                     }
                 }
             }
