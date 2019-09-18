@@ -74,6 +74,11 @@
             name = init.lifeName
         }
 
+        var initArgs = init.args || []
+        if (Object.prototype.toString.call(initArgs).toLowerCase() != "[object array]") {
+            initArgs = [initArgs]
+        }
+
         function hookExecByVM(that, lifeName) {
             setTimeout(function() {
                 var keyOpt = {}
@@ -159,10 +164,13 @@
         }
 
         if (initFn) {
-            initFn({
-                emit: hookEmit,
-                vue: vue
-            })
+            initFn(
+                {
+                    emit: hookEmit,
+                    vue: vue
+                },
+                ...initArgs
+            )
         }
     }
 

@@ -1,5 +1,8 @@
 # vue-life  
 
+## 更新日志
+ * +2019-09-18 增加args餐宿
+
 ## Vue自定义生命周期
  - 所有自定义生命周期，都绑定Vue的实际生命周期函数，并确保在实际生命周期之后执行
  - 自定义生命周期函数的运行受限于本身项目中的特定流程。
@@ -11,7 +14,7 @@
 import VueLife from "vue-life"
 Vue.use(VueLife, {
     // 完成回调
-    init (emit) {
+    init ({emit, vue}, ...args) {
         // 运行获取完成身份触发的事件
         setTimeout(() => {
             emit("user", {account: "account"})
@@ -28,7 +31,9 @@ Vue.use(VueLife, {
         user: "created"
     },
     // 默认的宽展字段 默认为 life
-    lifeName: "life"
+    lifeName: "life",
+    // 运行 init 函数时赋予的额外参数
+    args: []
 })
 
 ````
