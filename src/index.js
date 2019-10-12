@@ -37,6 +37,9 @@
     }
 
     function _hookExec(key, life, data) {
+        if (!data) {
+            return
+        }
         var lifes = life.that.$options[name] || []
         var hook = hooks[key] || hookDef
         if (!life.ready[hook]) {
