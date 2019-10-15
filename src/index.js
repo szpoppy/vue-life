@@ -18,22 +18,75 @@
 
     var hookLifes = {}
     var hookEmitData = {}
-
     var lifeIndexNum = 100
-    function addHookLifes(that, vueLifeName) {
+
+    function getHookLife(that) {
         var id = that._life_id_
         if (!id) {
             id = that._life_id_ = "$" + lifeIndexNum++
         }
         var life = hookLifes[id]
         if (!life) {
+            var data = {}
+            for (var n in hookEmitData) {
+                data[n] = hookEmitData[n]
+            }
             life = hookLifes[id] = {
                 that: that,
-                ready: {}
+                ready: {},
+                data: data
             }
         }
-        life.ready[vueLifeName] = true
         return life
+    }
+
+    function getHookEmitData(key, that) {
+        var data = that ? getHookLife(that).data : hookEmitData
+        if (key) {
+            return data[key]
+        }
+        return data
+    }
+
+    function addHookLifes(that, vueLifeName) {
+        var life = getHookLife(that)
+        life.ready[vueLifeName] = true
+        if (vueLifeName == hookDef && life.callback) {
+            // 事件中的then函数
+            life.callback()
+        }
+        return life
+    }
+
+    function hookEmit(key, data, that) {
+        var hookData = getHookEmitData(null, that)
+        hookData[key] = {
+            data: data
+        }
+        if (that) {
+            _hookExec(key, getHookLife(that), hookData[key])
+            return
+        }
+        // console.log("hookLifes", hookLifes)
+        for (var n in hookLifes) {
+            _hookExec(key, hookLifes[n], hookData[key])
+        }
+    }
+
+    function hookEmitEvent(life, key) {
+        return {
+            data: life.data[key],
+            emit: function(key, value) {
+                hookEmit(key, value, life.that)
+            },
+            then: function(callback) {
+                if (life.ready[hookDef]) {
+                    callback && callback()
+                    return
+                }
+                life.callback = callback
+            }
+        }
     }
 
     function _hookExec(key, life, data) {
@@ -45,40 +98,14 @@
         if (!life.ready[hook]) {
             return
         }
-        // console.log("lifes", lifes)
+        // console.log(key, "lifes", lifes)
         var lifeFn
         for (var i = 0; i < lifes.length; i += 1) {
-            // debugger;
-            // console.log(lifes[i])
             lifeFn = lifes[i][key]
             if (lifeFn) {
-                lifeFn.call(life.that, data.data)
+                lifeFn.call(life.that, hookEmitEvent(life, key))
             }
         }
-    }
-    function hookExec(key, that) {
-        var data = hookEmitData[key]
-        // console.log("1", key, hookEmitData, that, data)
-        if (!data) {
-            return
-        }
-        // console.log("2", key, hookEmitData, that)
-        if (that) {
-            _hookExec(key, that, data)
-            return
-        }
-        // var hook = hooks[key] || hookDef
-        // console.log("3", key, hookEmitData, that)
-        for (var n in hookLifes) {
-            _hookExec(key, hookLifes[n], data)
-        }
-    }
-
-    function hookEmit(key, data) {
-        hookEmitData[key] = {
-            data: data
-        }
-        hookExec(key)
     }
 
     function install(vue, init) {
@@ -91,8 +118,10 @@
         var initFn = init.init
         // 设定在什么钩子函数中出发
         hookDef = init.hookDef || "mounted"
-        if (init.hooks) {
-            hooks = init.hooks
+        // prepose
+        hooks = init.hooks || {}
+        if (!hooks.prepose) {
+            hooks.prepose = "beforeCreate"
         }
 
         // ready 名称
@@ -106,13 +135,16 @@
         }
 
         function hookExecByVM(that, lifeName) {
-            // console.log("---", that, lifeName)
             setTimeout(function() {
                 var life = addHookLifes(that, lifeName)
                 var lifes = that.$options[name] || []
+                var readys = {}
                 for (var i = 0, k; i < lifes.length; i += 1) {
                     for (k in lifes[i]) {
-                        _hookExec(k, life, hookEmitData[k])
+                        if (!readys[k] && hooks[k] == lifeName) {
+                            readys[k] = true
+                            _hookExec(k, life, getHookEmitData(k, that))
+                        }
                     }
                 }
             }, 0)
@@ -120,12 +152,41 @@
 
         function hooksFn(key) {
             return function() {
+                // console.log("$$++++", key, hooks)
                 var life = this.$options[name]
                 if (life) {
+                    if (hooks.prepose == key) {
+                        // prepose 触发 emit
+                        hookEmit("prepose", {}, this)
+                    }
                     hookExecByVM(this, key)
                 }
             }
         }
+
+        // console.log("mixinOpt", mixinOpt)
+        vue.config.optionMergeStrategies[name] = function(pVal, nVal) {
+            var val = pVal instanceof Array ? pVal : pVal ? [pVal] : []
+            if (nVal) {
+                val.push(nVal)
+            }
+            // console.log(val)
+            return val
+        }
+
+        if (initFn) {
+            initFn(
+                {
+                    emit: function(key, data) {
+                        hookEmit(key, data)
+                    },
+                    hooks,
+                    vue: vue
+                },
+                ...initArgs
+            )
+        }
+
         var mixinOpt = {}
         for (var n in hooks) {
             if (!mixinOpt[hooks[n]]) {
@@ -135,20 +196,6 @@
         if (!mixinOpt[hookDef]) {
             mixinOpt[hookDef] = hooksFn(hookDef)
         }
-
-        //
-        // var beforeCreateFn = mixinOpt.beforeCreate
-        // mixinOpt.beforeCreate = function() {
-        //     var life = this.$options[name]
-        //     console.log(">>>...", this.$options[name], name)
-        //     if (life) {
-        //         hookLifes.push(this)
-        //     }
-
-        //     if (beforeCreateFn) {
-        //         beforeCreateFn.call(this)
-        //     }
-        // }
 
         // 销毁
         var destroyedFn = mixinOpt.destroyed
@@ -168,25 +215,6 @@
         }
 
         vue.mixin(mixinOpt)
-        // console.log("mixinOpt", mixinOpt)
-        vue.config.optionMergeStrategies[name] = function(pVal, nVal) {
-            var val = pVal instanceof Array ? pVal : pVal ? [pVal] : []
-            if (nVal) {
-                val.push(nVal)
-            }
-            // console.log(val)
-            return val
-        }
-
-        if (initFn) {
-            initFn(
-                {
-                    emit: hookEmit,
-                    vue: vue
-                },
-                ...initArgs
-            )
-        }
     }
 
     return {

@@ -1,6 +1,7 @@
 # vue-life  
 
 ## 更新日志
+ * +2019-10-15 在单个实例中也可以通过emit触发life
  * +2019-09-18 增加args参数
  * 修复极端情况触发两次的情况
 
@@ -43,13 +44,13 @@ Vue.use(VueLife, {
 // vue中，实际触发
 {
     life: {
-        user (user) {
+        user ({data}) {
             // 这个生命周期将在 emit("user", {account: "account"}) 和 created 之后来触发生命周期（hooks配置）
-            // user 内容为 {account: "account"}
+            // data 内容为 {account: "account"}
         },
-        ready (info) {
+        ready ({data}) {
             // 这个生命周期将在 emit("ready", "app is ready") 和 mounted 之后来触发生命周期（hookDef配置）
-            // user 内容为 "app is ready"
+            // data 内容为 "app is ready"
         }
     }
 }
