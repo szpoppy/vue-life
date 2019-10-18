@@ -1,6 +1,6 @@
 {
     "name": "vue-life",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "vue自定义生命周期",
     "main": "src/index.js",
     "scripts": {

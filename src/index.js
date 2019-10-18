@@ -135,19 +135,17 @@
         }
 
         function hookExecByVM(that, lifeName) {
-            setTimeout(function() {
-                var life = addHookLifes(that, lifeName)
-                var lifes = that.$options[name] || []
-                var readys = {}
-                for (var i = 0, k; i < lifes.length; i += 1) {
-                    for (k in lifes[i]) {
-                        if (!readys[k] && hooks[k] == lifeName) {
-                            readys[k] = true
-                            _hookExec(k, life, getHookEmitData(k, that))
-                        }
+            var life = addHookLifes(that, lifeName)
+            var lifes = that.$options[name] || []
+            var readys = {}
+            for (var i = 0, k; i < lifes.length; i += 1) {
+                for (k in lifes[i]) {
+                    if (!readys[k] && hooks[k] == lifeName) {
+                        readys[k] = true
+                        _hookExec(k, life, getHookEmitData(k, that))
                     }
                 }
-            }, 0)
+            }
         }
 
         function hooksFn(key) {
