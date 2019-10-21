@@ -16,7 +16,10 @@
 import VueLife from "vue-life"
 Vue.use(VueLife, {
     // 完成回调
-    init ({emit, vue}, ...args) {
+    init ({emit, vue, hooks}, ...args) {
+        // 此处的emit是全局触发
+        // 初始化内设置 绑定vue生命周期函数
+        hooks.before = "beforeCreate"
         // 运行获取完成身份触发的事件
         setTimeout(() => {
             emit("user", {account: "account"})
@@ -25,6 +28,10 @@ Vue.use(VueLife, {
         setTimeout(() => {
             emit("ready", "app is ready")
         }, 200)
+
+        setTimeout(() => {
+            emit("before", "app is before")
+        }, 0)
     },
     // 默认绑定的vue本身生命周期函数
     hookDef: "mounted",
@@ -44,6 +51,14 @@ Vue.use(VueLife, {
 // vue中，实际触发
 {
     life: {
+        befor ({data, then, emit}) {
+            // emit 可以触发其他的事件，此事件只局限于本组件中
+            // 此处触发大概在 beforeCreate 左右
+            // 此处可以利用vue生命周期的间隔来初始化数据
+            then(() => {
+                // 此处触发，会在 hookDef(mounted) 设置的触发时机触发 
+            })
+        },
         user ({data}) {
             // 这个生命周期将在 emit("user", {account: "account"}) 和 created 之后来触发生命周期（hooks配置）
             // data 内容为 {account: "account"}
