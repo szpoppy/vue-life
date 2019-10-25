@@ -74,3 +74,55 @@ Vue.use(VueLife, {
 
 ## 获取安装  
 > npm install vue-life
+
+## 实例
+
+> 下面两个ajax触发时间都可以发生在vue本省生命周期函数过度期间运行，加快页面加载速度
+
+### 流程图
+
+!["流程图"](./imgs/tu.png)
+
+### 初始化
+```js
+import VueLife from "vue-life"
+Vue.use(VueLife, {
+    // 完成回调
+    init ({emit, hooks}) {
+        // user 事件关联 hooks.before = "beforeCreate"
+        hooks.user = "beforeCreate"
+
+        // ajax获取用户信息
+        ajax(function(res){
+            // user 事件触发
+            emit("user", res)
+        })
+    }
+})
+```
+
+### vue实例
+```html
+<script>
+export default {
+    life: {
+        user ({then, data}) {
+            /*
+                这里的会在 beforeCreate 之后触发
+                由于首次加载，可能由于ajax原因，会延后触发
+                data 即为 res
+            */
+            
+            // ajax加载用用户详细信息
+            ajax(function(userDetail) {
+                // 加载完成后，用then函数
+                then(function() {
+                    // 这里的代码能保证在 mounted 之后触发
+                    // ...
+                })
+            })
+        }
+    }
+}
+</script>
+```
