@@ -126,3 +126,27 @@ export default {
 }
 </script>
 ```
+
+### prepose 自定在 beforeCreate 时会触发
+```html
+<script>
+export default {
+    life: {
+        prepose ({then}) {
+            /*
+                这里的会在 beforeCreate 之后触发
+            */
+            
+            // 这里表示异步执行
+            setTimeout(function(userDetail) {
+                // 使用then函数回调保证回调在 mounted 之后处罚
+                then(function() {
+                    // 这里的代码能保证在 mounted 之后触发
+                    // ...
+                })
+            }, 0)
+        }
+    }
+}
+</script>
+```
