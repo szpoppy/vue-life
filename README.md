@@ -132,9 +132,10 @@ export default {
 <script>
 export default {
     life: {
-        prepose ({then}) {
+        prepose ({then, emit}) {
             /*
                 这里的会在 beforeCreate 之后触发
+                emit 可以手动出发其他自定义事件，但仅限于当前实例
             */
             
             // 这里表示异步执行
