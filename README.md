@@ -110,7 +110,7 @@ export default {
             /*
                 这里的会在 beforeCreate 之后触发
                 由于首次加载，可能由于ajax原因，会延后触发
-                data 即为 res
+                data 即为 上面的 ajax回调参数 res
             */
             
             // ajax加载用用户详细信息
