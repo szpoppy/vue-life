@@ -140,7 +140,7 @@
             var readys = {}
             for (var i = 0, k; i < lifes.length; i += 1) {
                 for (k in lifes[i]) {
-                    if (!readys[k] && hooks[k] == lifeName) {
+                    if (!readys[k] && (hooks[k] || hookDef) == lifeName) {
                         readys[k] = true
                         _hookExec(k, life, getHookEmitData(k, that))
                     }
