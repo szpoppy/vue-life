@@ -1,8 +1,8 @@
 {
     "name": "vue-life",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "vue自定义生命周期",
-    "main": "dist/index.js",
+    "main": "index.js",
     "scripts": {
         "build": "rm -rf ./dist && tsc"
     },
