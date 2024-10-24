@@ -21,7 +21,7 @@
     },
     "homepage": "https://github.com/szpoppy/vue-life#readme",
     "dependencies": {
-        "vue": "^2.6.11"
+        "vue": "^3.0.0"
     },
     "devDependencies": {
         "typescript": "^3.7.5"
